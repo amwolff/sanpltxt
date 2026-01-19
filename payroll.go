@@ -1,33 +1,38 @@
 package sanpltxt
 
-import "strings"
+import (
+	"strings"
+	"time"
+)
 
-// Payroll represents a Type 5 transfer - salary payment.
-// Can only be used in Package.Type=2 (payroll packages).
-//
-// Example line:
-//
-//	5|51109010430000000100111111|50102055581111103350100016|Jan Nowak|Poznań ul. Swojska 17 06-123|1000,12|1|Wynagrodzenie za miesiąc|01-09-2020|
+// Payroll is a Type 5 transfer (salary payment). Only allowed in payroll packages.
 type Payroll struct {
-	DebitAccount  string       // 26-digit NRB account number (source)
-	CreditAccount string       // 26-digit NRB account number (destination)
-	RecipientName string       // Employee name, max 80 chars
-	Address       string       // Employee address, max 60 chars
-	Amount        Amount       // Transfer amount in grosze
-	Mode          TransferMode // Transfer mode: Internal(0), Elixir(1), SORBNET(6), ExpressElixir(8)
-	Title         string       // Transfer description (e.g., "Wynagrodzenie za miesiąc"), max 140 chars
-	Date          *Date        // Optional execution date
+	DebitAccount  string
+	CreditAccount string
+	RecipientName string
+	Address       string
+	Amount        Amount
+	Mode          TransferMode
+	Title         string
+	Date          *time.Time
 }
 
 var _ Transfer = (*Payroll)(nil)
 
-// Marshal converts the transfer to Santander format string.
+// Marshal returns the transfer in Santander format.
 func (p *Payroll) Marshal() (string, error) {
-	if err := p.validate(); err != nil {
+	var b strings.Builder
+	if err := p.marshal(&b); err != nil {
 		return "", err
 	}
+	return b.String(), nil
+}
 
-	var b strings.Builder
+func (p *Payroll) marshal(b *strings.Builder) error {
+	if err := p.validate(); err != nil {
+		return err
+	}
+
 	b.WriteString("5|")
 	b.WriteString(p.DebitAccount)
 	b.WriteString("|")
@@ -44,11 +49,11 @@ func (p *Payroll) Marshal() (string, error) {
 	b.WriteString(p.Title)
 	b.WriteString("|")
 	if p.Date != nil {
-		b.WriteString(p.Date.String())
+		b.WriteString(p.Date.Format(dateFormat))
 	}
 	b.WriteString("|")
 
-	return b.String(), nil
+	return nil
 }
 
 func (p *Payroll) validate() error {

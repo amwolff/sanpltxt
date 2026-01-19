@@ -1,40 +1,45 @@
 package sanpltxt
 
-import "strings"
+import (
+	"strings"
+	"time"
+)
 
-// Tax represents a Type 3 (tax office) or Type 4 (other tax authority) transfer.
-// The TaxOffice field determines the type: true=3 (urząd skarbowy), false=4 (other organ).
-//
-// Example line (type 3):
-//
-//	3|51109010430000000100111111|06101014690039392223000000|Urzad Skarbowy Poznan Winogrady|Poznan Wojciechowskiego 3/5 60-685|1000|01-09-2020|Jan Kowalski|N|9721230101|05|M|07|PIT5|id.zobowiazania|
+// Tax is a Type 3 (TaxOffice=true) or Type 4 (TaxOffice=false) transfer.
 type Tax struct {
-	TaxOffice      bool           // true = type 3 (tax office), false = type 4 (other tax authority)
-	DebitAccount   string         // 26-digit NRB account number (source)
-	CreditAccount  string         // 26-digit NRB account number (destination)
-	RecipientName  string         // Tax authority name, max 80 chars
-	Address        string         // Optional address, max 60 chars
-	Amount         Amount         // Transfer amount in grosze
-	Date           *Date          // Optional execution date
-	PayerName      string         // Payer name, max 50 chars
-	IdentifierType IdentifierType // Type of identifier (N=NIP, R=REGON, P=PESEL, 1=ID, 2=Passport, 3=Other)
-	Identifier     string         // Identifier value (NIP=10, REGON=9/14, PESEL=11, ID=8-9, Passport≤14)
-	Year           string         // Optional 2-digit year (e.g., "05" for 2005)
-	PeriodType     PeriodType     // Optional period type (R=Year, P=Half, K=Quarter, M=Month, D=Decade, J=Day)
-	PeriodNumber   string         // Optional period number (depends on PeriodType)
-	FormSymbol     string         // Tax form symbol (e.g., "PIT5"), max 6 chars
-	ObligationID   string         // Optional obligation identifier, max 20 chars
+	TaxOffice      bool // true = type 3, false = type 4
+	DebitAccount   string
+	CreditAccount  string
+	RecipientName  string
+	Address        string
+	Amount         Amount
+	Date           *time.Time
+	PayerName      string
+	IdentifierType IdentifierType
+	Identifier     string
+	Year           string
+	PeriodType     PeriodType
+	PeriodNumber   string
+	FormSymbol     string
+	ObligationID   string
 }
 
 var _ Transfer = (*Tax)(nil)
 
-// Marshal converts the transfer to Santander format string.
+// Marshal returns the transfer in Santander format.
 func (t *Tax) Marshal() (string, error) {
-	if err := t.validate(); err != nil {
+	var b strings.Builder
+	if err := t.marshal(&b); err != nil {
 		return "", err
 	}
+	return b.String(), nil
+}
 
-	var b strings.Builder
+func (t *Tax) marshal(b *strings.Builder) error {
+	if err := t.validate(); err != nil {
+		return err
+	}
+
 	if t.TaxOffice {
 		b.WriteString("3|")
 	} else {
@@ -51,7 +56,7 @@ func (t *Tax) Marshal() (string, error) {
 	b.WriteString(t.Amount.String())
 	b.WriteString("|")
 	if t.Date != nil {
-		b.WriteString(t.Date.String())
+		b.WriteString(t.Date.Format(dateFormat))
 	}
 	b.WriteString("|")
 	b.WriteString(t.PayerName)
@@ -71,7 +76,7 @@ func (t *Tax) Marshal() (string, error) {
 	b.WriteString(t.ObligationID)
 	b.WriteString("|")
 
-	return b.String(), nil
+	return nil
 }
 
 func (t *Tax) validate() error {

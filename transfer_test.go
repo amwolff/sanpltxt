@@ -10,8 +10,9 @@ import (
 	"github.com/amwolff/sanpltxt"
 )
 
-func date(year, month, day int) *sanpltxt.Date {
-	return &sanpltxt.Date{Time: time.Date(year, time.Month(month), day, 0, 0, 0, 0, time.UTC)}
+func date(year, month, day int) *time.Time {
+	t := time.Date(year, time.Month(month), day, 0, 0, 0, 0, time.UTC)
+	return &t
 }
 
 func TestAmount_String(t *testing.T) {
@@ -33,24 +34,6 @@ func TestAmount_String(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.want, func(t *testing.T) {
 			got := tt.amount.String()
-			assert.Equal(t, got, tt.want)
-		})
-	}
-}
-
-func TestDate_String(t *testing.T) {
-	tests := []struct {
-		date *sanpltxt.Date
-		want string
-	}{
-		{date(2020, 9, 1), "01-09-2020"},
-		{date(2020, 9, 30), "30-09-2020"},
-		{date(2020, 12, 31), "31-12-2020"},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.want, func(t *testing.T) {
-			got := tt.date.String()
 			assert.Equal(t, got, tt.want)
 		})
 	}
@@ -167,31 +150,28 @@ func TestSplitPayment_Marshal(t *testing.T) {
 }
 
 func TestPackage_Marshal_Regular(t *testing.T) {
-	pkg := &sanpltxt.Package{
-		Type: 1,
-		Transfers: []sanpltxt.Transfer{
-			&sanpltxt.Standard{
-				DebitAccount:  "51109010430000000100111111",
-				CreditAccount: "50102055581111103350100016",
-				RecipientName: "Jerzy Kowalski",
-				Address:       "Warszawa ul. Kaliska 123 00-123",
-				Amount:        12312,
-				Mode:          sanpltxt.ModeElixir,
-				Title:         "zasielenie konta",
-				Date:          date(2020, 9, 1),
-				NIP:           "7850000000",
-			},
-			&sanpltxt.ZUS{
-				DebitAccount:  "51109010430000000100111111",
-				CreditAccount: "82600000020260111122223333",
-				RecipientName: "ZUS",
-				Address:       "Warszawa ul. Szamocka 3,5 01748",
-				Amount:        31994,
-				Title:         "Skladka ZUS",
-				Date:          date(2020, 9, 1),
-			},
+	pkg := sanpltxt.NewPackage(1, []sanpltxt.Transfer{
+		&sanpltxt.Standard{
+			DebitAccount:  "51109010430000000100111111",
+			CreditAccount: "50102055581111103350100016",
+			RecipientName: "Jerzy Kowalski",
+			Address:       "Warszawa ul. Kaliska 123 00-123",
+			Amount:        12312,
+			Mode:          sanpltxt.ModeElixir,
+			Title:         "zasielenie konta",
+			Date:          date(2020, 9, 1),
+			NIP:           "7850000000",
 		},
-	}
+		&sanpltxt.ZUS{
+			DebitAccount:  "51109010430000000100111111",
+			CreditAccount: "82600000020260111122223333",
+			RecipientName: "ZUS",
+			Address:       "Warszawa ul. Szamocka 3,5 01748",
+			Amount:        31994,
+			Title:         "Skladka ZUS",
+			Date:          date(2020, 9, 1),
+		},
+	}, nil)
 
 	got, err := pkg.Marshal()
 	assert.NoError(t, err)
@@ -204,21 +184,18 @@ func TestPackage_Marshal_Regular(t *testing.T) {
 }
 
 func TestPackage_Marshal_Payroll(t *testing.T) {
-	pkg := &sanpltxt.Package{
-		Type: 2,
-		Transfers: []sanpltxt.Transfer{
-			&sanpltxt.Payroll{
-				DebitAccount:  "51109010430000000100111111",
-				CreditAccount: "50102055581111103350100016",
-				RecipientName: "Jan Nowak",
-				Address:       "Poznań ul. Swojska 17 06-123",
-				Amount:        100012,
-				Mode:          sanpltxt.ModeElixir,
-				Title:         "Wynagrodzenie za miesiąc",
-				Date:          date(2020, 9, 1),
-			},
+	pkg := sanpltxt.NewPackage(2, []sanpltxt.Transfer{
+		&sanpltxt.Payroll{
+			DebitAccount:  "51109010430000000100111111",
+			CreditAccount: "50102055581111103350100016",
+			RecipientName: "Jan Nowak",
+			Address:       "Poznań ul. Swojska 17 06-123",
+			Amount:        100012,
+			Mode:          sanpltxt.ModeElixir,
+			Title:         "Wynagrodzenie za miesiąc",
+			Date:          date(2020, 9, 1),
 		},
-	}
+	}, nil)
 
 	got, err := pkg.Marshal()
 	assert.NoError(t, err)
@@ -230,40 +207,34 @@ func TestPackage_Marshal_Payroll(t *testing.T) {
 }
 
 func TestPackage_Marshal_RejectsPayrollInRegular(t *testing.T) {
-	pkg := &sanpltxt.Package{
-		Type: 1, // Regular package
-		Transfers: []sanpltxt.Transfer{
-			&sanpltxt.Payroll{ // Payroll transfer - should be rejected
-				DebitAccount:  "51109010430000000100111111",
-				CreditAccount: "50102055581111103350100016",
-				RecipientName: "Jan Nowak",
-				Address:       "Poznań ul. Swojska 17 06-123",
-				Amount:        100012,
-				Mode:          sanpltxt.ModeElixir,
-				Title:         "Wynagrodzenie za miesiąc",
-			},
+	pkg := sanpltxt.NewPackage(1, []sanpltxt.Transfer{
+		&sanpltxt.Payroll{ // Payroll transfer - should be rejected
+			DebitAccount:  "51109010430000000100111111",
+			CreditAccount: "50102055581111103350100016",
+			RecipientName: "Jan Nowak",
+			Address:       "Poznań ul. Swojska 17 06-123",
+			Amount:        100012,
+			Mode:          sanpltxt.ModeElixir,
+			Title:         "Wynagrodzenie za miesiąc",
 		},
-	}
+	}, nil)
 
 	_, err := pkg.Marshal()
 	assert.Error(t, err)
 }
 
 func TestPackage_Marshal_RejectsStandardInPayroll(t *testing.T) {
-	pkg := &sanpltxt.Package{
-		Type: 2, // Payroll package
-		Transfers: []sanpltxt.Transfer{
-			&sanpltxt.Standard{ // Standard transfer - should be rejected
-				DebitAccount:  "51109010430000000100111111",
-				CreditAccount: "50102055581111103350100016",
-				RecipientName: "Jerzy Kowalski",
-				Address:       "Warszawa ul. Kaliska 123 00-123",
-				Amount:        12312,
-				Mode:          sanpltxt.ModeElixir,
-				Title:         "zasielenie konta",
-			},
+	pkg := sanpltxt.NewPackage(2, []sanpltxt.Transfer{
+		&sanpltxt.Standard{ // Standard transfer - should be rejected
+			DebitAccount:  "51109010430000000100111111",
+			CreditAccount: "50102055581111103350100016",
+			RecipientName: "Jerzy Kowalski",
+			Address:       "Warszawa ul. Kaliska 123 00-123",
+			Amount:        12312,
+			Mode:          sanpltxt.ModeElixir,
+			Title:         "zasielenie konta",
 		},
-	}
+	}, nil)
 
 	_, err := pkg.Marshal()
 	assert.Error(t, err)

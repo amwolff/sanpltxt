@@ -1,34 +1,39 @@
 package sanpltxt
 
-import "strings"
+import (
+	"strings"
+	"time"
+)
 
-// Standard represents a Type 1 transfer - external account transfer.
-// Used for regular transfers to accounts at other banks.
-//
-// Example line:
-//
-//	1|51109010430000000100111111|50102055581111103350100016|Jerzy Kowalski|Warszawa ul. Kaliska 123 00-123|123,12|1|zasielenie konta|01-09-2020|7850000000|
+// Standard is a Type 1 transfer (external account transfer).
 type Standard struct {
-	DebitAccount  string       // 26-digit NRB account number (source)
-	CreditAccount string       // 26-digit NRB account number (destination)
-	RecipientName string       // Recipient name, max 80 chars
-	Address       string       // Recipient address, max 60 chars
-	Amount        Amount       // Transfer amount in grosze
-	Mode          TransferMode // Transfer mode: Internal(0), Elixir(1), SORBNET(6), ExpressElixir(8)
-	Title         string       // Transfer description, max 140 chars
-	Date          *Date        // Optional execution date
-	NIP           string       // Optional recipient NIP for VAT whitelist verification
+	DebitAccount  string
+	CreditAccount string
+	RecipientName string
+	Address       string
+	Amount        Amount
+	Mode          TransferMode
+	Title         string
+	Date          *time.Time
+	NIP           string
 }
 
 var _ Transfer = (*Standard)(nil)
 
-// Marshal converts the transfer to Santander format string.
+// Marshal returns the transfer in Santander format.
 func (s *Standard) Marshal() (string, error) {
-	if err := s.validate(); err != nil {
+	var b strings.Builder
+	if err := s.marshal(&b); err != nil {
 		return "", err
 	}
+	return b.String(), nil
+}
 
-	var b strings.Builder
+func (s *Standard) marshal(b *strings.Builder) error {
+	if err := s.validate(); err != nil {
+		return err
+	}
+
 	b.WriteString("1|")
 	b.WriteString(s.DebitAccount)
 	b.WriteString("|")
@@ -45,13 +50,13 @@ func (s *Standard) Marshal() (string, error) {
 	b.WriteString(s.Title)
 	b.WriteString("|")
 	if s.Date != nil {
-		b.WriteString(s.Date.String())
+		b.WriteString(s.Date.Format(dateFormat))
 	}
 	b.WriteString("|")
 	b.WriteString(s.NIP)
 	b.WriteString("|")
 
-	return b.String(), nil
+	return nil
 }
 
 func (s *Standard) validate() error {

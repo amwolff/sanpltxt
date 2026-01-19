@@ -1,32 +1,37 @@
 package sanpltxt
 
-import "strings"
+import (
+	"strings"
+	"time"
+)
 
-// ZUS represents a Type 2 transfer - ZUS/KRUS social insurance payment.
-// Transfer mode is always Elixir (1) for ZUS transfers.
-//
-// Example line:
-//
-//	2|51109010430000000100111111|82600000020260111122223333|ZUS|Warszawa ul. Szamocka 3,5 01748|319,94|1|Skladka ZUS|01-09-2020|
+// ZUS is a Type 2 transfer (social insurance payment). Mode is always Elixir.
 type ZUS struct {
-	DebitAccount  string // 26-digit NRB account number (source)
-	CreditAccount string // 26-digit NRB account number (destination, ZUS account)
-	RecipientName string // Recipient name (e.g., "ZUS"), max 80 chars
-	Address       string // Recipient address, max 60 chars
-	Amount        Amount // Transfer amount in grosze
-	Title         string // Transfer description, max 140 chars
-	Date          *Date  // Optional execution date
+	DebitAccount  string
+	CreditAccount string
+	RecipientName string
+	Address       string
+	Amount        Amount
+	Title         string
+	Date          *time.Time
 }
 
 var _ Transfer = (*ZUS)(nil)
 
-// Marshal converts the transfer to Santander format string.
+// Marshal returns the transfer in Santander format.
 func (z *ZUS) Marshal() (string, error) {
-	if err := z.validate(); err != nil {
+	var b strings.Builder
+	if err := z.marshal(&b); err != nil {
 		return "", err
 	}
+	return b.String(), nil
+}
 
-	var b strings.Builder
+func (z *ZUS) marshal(b *strings.Builder) error {
+	if err := z.validate(); err != nil {
+		return err
+	}
+
 	b.WriteString("2|")
 	b.WriteString(z.DebitAccount)
 	b.WriteString("|")
@@ -43,11 +48,11 @@ func (z *ZUS) Marshal() (string, error) {
 	b.WriteString(z.Title)
 	b.WriteString("|")
 	if z.Date != nil {
-		b.WriteString(z.Date.String())
+		b.WriteString(z.Date.Format(dateFormat))
 	}
 	b.WriteString("|")
 
-	return b.String(), nil
+	return nil
 }
 
 func (z *ZUS) validate() error {

@@ -8,34 +8,17 @@ import (
 	"unicode"
 )
 
-// Polish diacritical characters (uppercase and lowercase).
 const polishChars = "ąćęłńóśźżĄĆĘŁŃÓŚŹŻ"
 
-// Character sets for different field types.
 var (
-	// charsRecipientName: 0-9 A-Z a-z ` ! @ # $ % ^ & * ( ) _ + - = [ ] { } ; : . , ? / space + PL
 	charsRecipientName = buildCharSet("0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz`!@#$%^&*()_+-=[]{}; :.?/" + polishChars)
-
-	// charsAddress: 0-9 A-Z a-z - . , : ; / space + PL
-	charsAddress = buildCharSet("0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-.,:;/ " + polishChars)
-
-	// charsTitle: 0-9 A-Z a-z ` ! @ # $ % ^ & * ( ) _ + - = [ ] { } ; : , . ? / space + PL
-	charsTitle = buildCharSet("0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz`!@#$%^&*()_+-=[]{}; :,.?/" + polishChars)
-
-	// charsPayerName: 0-9 A-Z a-z - ; : . , / space + PL
-	charsPayerName = buildCharSet("0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-;:.,/ " + polishChars)
-
-	// charsFormSymbol: 0-9 A-Z -
-	charsFormSymbol = buildCharSet("0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ-")
-
-	// charsObligationID: 0-9 A-Z a-z - . , : ; space + PL
-	charsObligationID = buildCharSet("0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-.,:; " + polishChars)
-
-	// charsInvoice: 0-9 A-Z a-z - . , : ; / space + PL
-	charsInvoice = buildCharSet("0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-.,:;/ " + polishChars)
-
-	// charsFreeText: 0-9 A-Z a-z - . , : ; / space + PL (same as invoice)
-	charsFreeText = charsInvoice
+	charsAddress       = buildCharSet("0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-.,:;/ " + polishChars)
+	charsTitle         = buildCharSet("0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz`!@#$%^&*()_+-=[]{}; :,.?/" + polishChars)
+	charsPayerName     = buildCharSet("0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-;:.,/ " + polishChars)
+	charsFormSymbol    = buildCharSet("0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ-")
+	charsObligationID  = buildCharSet("0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-.,:; " + polishChars)
+	charsInvoice       = buildCharSet("0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-.,:;/ " + polishChars)
+	charsFreeText      = charsInvoice
 )
 
 func buildCharSet(s string) map[rune]struct{} {
@@ -64,7 +47,6 @@ func isDigitsOnly(s string) bool {
 	return true
 }
 
-// validateNRB validates a Polish NRB account number (26 digits).
 func validateNRB(account, fieldName string) error {
 	if len(account) != 26 {
 		return fmt.Errorf("%s must be exactly 26 digits, got %d", fieldName, len(account))
@@ -75,7 +57,6 @@ func validateNRB(account, fieldName string) error {
 	return nil
 }
 
-// validateNIP validates a Polish NIP tax ID (10 digits).
 func validateNIP(nip string) error {
 	if len(nip) != 10 {
 		return fmt.Errorf("NIP must be exactly 10 digits, got %d", len(nip))
@@ -86,7 +67,6 @@ func validateNIP(nip string) error {
 	return nil
 }
 
-// validateRecipientName validates a recipient name field.
 func validateRecipientName(name string) error {
 	if name == "" {
 		return errors.New("recipient name is required")
@@ -100,7 +80,6 @@ func validateRecipientName(name string) error {
 	return nil
 }
 
-// validateAddress validates an address field.
 func validateAddress(address string, required bool) error {
 	if address == "" {
 		if required {
@@ -117,7 +96,6 @@ func validateAddress(address string, required bool) error {
 	return nil
 }
 
-// validateTitle validates a title/description field.
 func validateTitle(title string) error {
 	if title == "" {
 		return errors.New("title is required")
@@ -131,7 +109,6 @@ func validateTitle(title string) error {
 	return nil
 }
 
-// validatePayerName validates a payer name field (for tax transfers).
 func validatePayerName(name string) error {
 	if name == "" {
 		return errors.New("payer name is required")
@@ -145,7 +122,6 @@ func validatePayerName(name string) error {
 	return nil
 }
 
-// validateFormSymbol validates a tax form symbol (e.g., "PIT5").
 func validateFormSymbol(symbol string) error {
 	if symbol == "" {
 		return errors.New("form symbol is required")
@@ -159,7 +135,6 @@ func validateFormSymbol(symbol string) error {
 	return nil
 }
 
-// validateObligationID validates an obligation identifier field.
 func validateObligationID(id string) error {
 	if id == "" {
 		return nil // optional field
@@ -173,7 +148,6 @@ func validateObligationID(id string) error {
 	return nil
 }
 
-// validateInvoiceNumber validates an invoice number field.
 func validateInvoiceNumber(num string) error {
 	if num == "" {
 		return errors.New("invoice number is required")
@@ -187,7 +161,6 @@ func validateInvoiceNumber(num string) error {
 	return nil
 }
 
-// validateFreeText validates a free text field.
 func validateFreeText(text string) error {
 	if text == "" {
 		return nil // optional field
@@ -201,7 +174,6 @@ func validateFreeText(text string) error {
 	return nil
 }
 
-// validateTransferMode validates a transfer mode value.
 func validateTransferMode(mode TransferMode, allowedModes ...TransferMode) error {
 	for _, m := range allowedModes {
 		if mode == m {
@@ -215,20 +187,19 @@ func validateTransferMode(mode TransferMode, allowedModes ...TransferMode) error
 	return errors.New("transfer mode must be one of: " + strings.Join(modes, ", "))
 }
 
-// IdentifierType represents the type of tax identifier.
+// IdentifierType is the type of tax identifier.
 type IdentifierType string
 
-// Identifier type values for tax transfers.
+// Identifier types.
 const (
-	IdentifierNIP      IdentifierType = "N" // NIP - tax ID
-	IdentifierREGON    IdentifierType = "R" // REGON - business registry number
-	IdentifierPESEL    IdentifierType = "P" // PESEL - personal ID number
-	IdentifierID       IdentifierType = "1" // Personal ID card
-	IdentifierPassport IdentifierType = "2" // Passport
-	IdentifierOther    IdentifierType = "3" // Other document
+	IdentifierNIP      IdentifierType = "N"
+	IdentifierREGON    IdentifierType = "R"
+	IdentifierPESEL    IdentifierType = "P"
+	IdentifierID       IdentifierType = "1"
+	IdentifierPassport IdentifierType = "2"
+	IdentifierOther    IdentifierType = "3"
 )
 
-// validateIdentifierType validates an identifier type.
 func validateIdentifierType(t IdentifierType) error {
 	switch t {
 	case IdentifierNIP, IdentifierREGON, IdentifierPESEL, IdentifierID, IdentifierPassport, IdentifierOther:
@@ -237,7 +208,6 @@ func validateIdentifierType(t IdentifierType) error {
 	return errors.New("identifier type must be one of: N (NIP), R (REGON), P (PESEL), 1 (ID), 2 (Passport), 3 (Other)")
 }
 
-// validateIdentifier validates an identifier based on its type.
 func validateIdentifier(id string, idType IdentifierType) error {
 	if id == "" {
 		return errors.New("identifier is required")
@@ -268,20 +238,19 @@ func validateIdentifier(id string, idType IdentifierType) error {
 	return nil
 }
 
-// PeriodType represents the type of tax period.
+// PeriodType is the type of tax period.
 type PeriodType string
 
-// Period type values for tax transfers.
+// Period types.
 const (
-	PeriodYear    PeriodType = "R" // Yearly
-	PeriodHalf    PeriodType = "P" // Half-year (półrocze)
-	PeriodQuarter PeriodType = "K" // Quarterly (kwartał)
-	PeriodMonth   PeriodType = "M" // Monthly
-	PeriodDecade  PeriodType = "D" // Decade (10-day period)
-	PeriodDay     PeriodType = "J" // Daily
+	PeriodYear    PeriodType = "R"
+	PeriodHalf    PeriodType = "P"
+	PeriodQuarter PeriodType = "K"
+	PeriodMonth   PeriodType = "M"
+	PeriodDecade  PeriodType = "D"
+	PeriodDay     PeriodType = "J"
 )
 
-// validatePeriodType validates a period type.
 func validatePeriodType(t PeriodType) error {
 	if t == "" {
 		return nil // optional
@@ -293,7 +262,6 @@ func validatePeriodType(t PeriodType) error {
 	return errors.New("period type must be one of: R (year), P (half), K (quarter), M (month), D (decade), J (day)")
 }
 
-// validatePeriodNumber validates a period number based on its type.
 func validatePeriodNumber(num string, periodType PeriodType) error {
 	if periodType == "" || periodType == PeriodYear {
 		if num != "" {
@@ -339,7 +307,6 @@ func validatePeriodNumber(num string, periodType PeriodType) error {
 	return nil
 }
 
-// validateYear validates a 2-digit year.
 func validateYear(year string) error {
 	if year == "" {
 		return nil // optional
