@@ -1,0 +1,1 @@
+Create transfers for import into the transfer system of Santander Bank Polska. See [![Go Reference](https://pkg.go.dev/badge/github.com/amwolff/sanpltxt.svg)](https://pkg.go.dev/github.com/amwolff/sanpltxt).
